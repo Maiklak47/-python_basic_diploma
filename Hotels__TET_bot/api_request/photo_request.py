@@ -3,7 +3,7 @@ import requests
 from loguru import logger
 from typing import List
 
-from config_bot import headers
+from config_data.config import headers
 
 
 @logger.catch
@@ -30,6 +30,10 @@ def get_photo(hotel_id: str) -> List[dict] or None:
         url_list = [{'photo': url[f'baseUrl']} for url in founded_url['hotelImages']]
         return url_list
 
+    except requests.ConnectionError as e:
+        logger.info(f'{e} exceptions Connection Error. Make sure you are connected to Internet.')
+    except requests.Timeout as e:
+        logger.info(f'{e} exceptions "ConnectTimeout"')
     except requests.exceptions.RequestException as e:
         logger.info(f'{e} exceptions on step "get_photo"')
         return None

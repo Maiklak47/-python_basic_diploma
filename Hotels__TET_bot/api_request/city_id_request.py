@@ -4,7 +4,7 @@ import re
 from loguru import logger
 from typing import Optional, List
 
-from config_bot import headers
+from config_data.config import headers
 
 
 @logger.catch
@@ -38,6 +38,10 @@ def search_city(city: Optional[str]) -> List[dict] or None:
                 caption = re.sub(r"^<span class='highlighted'>|</span>", '', i['caption']).split(',')[:2]
                 city_list.append({i['destinationId']: ','.join(caption)})
         return city_list
+    except requests.ConnectionError as e:
+        logger.info(f'{e} exceptions Connection Error. Make sure you are connected to Internet.')
+    except requests.Timeout as e:
+        logger.info(f'{e} exceptions "ConnectTimeout"')
     except requests.exceptions.RequestException as e:
         logger.info(f'{e} exceptions on step "search_city"')
         return None

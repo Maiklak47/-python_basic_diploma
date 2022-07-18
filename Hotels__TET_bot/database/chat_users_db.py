@@ -9,7 +9,7 @@ def create_db(user_id: int) -> None:
     :param user_id: id пользователя.
     :return: None
     """
-    with sqlite3.connect('db/users_' + str(user_id) + '.db') as chat_data:
+    with sqlite3.connect('database/users_' + str(user_id) + '.database') as chat_data:
         cursor = chat_data.cursor()
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS users_data(user_id INTEGER UNIQUE,
@@ -45,7 +45,7 @@ def set_info(column: str, value: str or int, user_id: int) -> None:
     :param user_id: id пользователя, в чью таблицу данных будут внесены изменения.
     :return: None
     """
-    with sqlite3.connect('db/users_' + str(user_id) + '.db') as chat_data:
+    with sqlite3.connect('database/users_' + str(user_id) + '.database') as chat_data:
         cursor = chat_data.cursor()
         info_to_set = f""" UPDATE users_data SET {column} = ? WHERE user_id = ? """
         data = (value, user_id)
@@ -60,7 +60,7 @@ def get_info(user_id: int) -> tuple:
     :param user_id: id пользователя
     :return: кортеж данных пользователя из таблицы БД
     """
-    with sqlite3.connect('db/users_' + str(user_id) + '.db') as chat_data:
+    with sqlite3.connect('database/users_' + str(user_id) + '.database') as chat_data:
         cursor = chat_data.cursor()
         cursor.execute(f""" SELECT * FROM users_data WHERE user_id = {user_id} """)
 

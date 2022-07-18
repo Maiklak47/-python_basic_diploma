@@ -1,14 +1,16 @@
+# -*- coding: utf8 -*-
 from datetime import datetime
 from typing import List
 
 import requests
 from loguru import logger
 
-from config_bot import headers
+from config_data.config import headers
 
 
 @logger.catch
 def hotels_info_for_bestdeal(town_id: str,
+                             command: str,
                              count_of_hotels: int,
                              min_price: int,
                              max_price: int,
@@ -19,6 +21,7 @@ def hotels_info_for_bestdeal(town_id: str,
     """
     Функция. Осуществляет запрос к API Hotels для получения списка отелей
     и их характеристик по-заданному ID города для команд bestdeal.
+    :param command: тип запроса, который выбрал пользователь.
     :param town_id: id города, для запроса.
     :param count_of_hotels: количество отелей, которое запросил пользователь.
     :param min_price: минимальная цена проживания.
@@ -49,7 +52,8 @@ def hotels_info_for_bestdeal(town_id: str,
                    "locale": "ru_RU",
                    "currency": "RUB",
                    }
-
+    if command == 'highprice':
+        querystring['sortOrder'] = 'PRICE_HIGHEST_FIRST'
     try:
         response = requests.request("GET", url_hotels,
                                     headers=headers,
@@ -83,6 +87,10 @@ def hotels_info_for_bestdeal(town_id: str,
                                            hotels_list))
 
         return bestdeal_hotels_list[:count_of_hotels]
+    except requests.ConnectionError as e:
+        logger.info(f'{e} exceptions Connection Error. Make sure you are connected to Internet.')
+    except requests.Timeout as e:
+        logger.info(f'{e} exceptions "ConnectTimeout"')
     except requests.exceptions.RequestException as e:
         logger.info(f'{e} exceptions on step "hotels_info_for_bestdeal"')
         return None
