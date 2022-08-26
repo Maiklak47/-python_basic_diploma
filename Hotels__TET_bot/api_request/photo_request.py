@@ -1,39 +1,35 @@
 import requests
-
+import re
+import json
 from loguru import logger
-from typing import List
 
+from api_request.city_id_request import request_api
 from config_data.config import headers
+from utils.different import make_photo_url
 
 
 @logger.catch
-def get_photo(hotel_id: str) -> List[dict] or None:
-    """
-    Функция. Осуществляет запрос к API Hotels для получения фотографий отеля,
-    по-заданному ID отеля.
+def get_photo(hotel_id: str, photos_count=5) -> list | None:
+    """Функция формирования и обработки запроса для получения ссылок на фотографии отеля. Словарь с информацией
+    о фотографиях обрабатывается с помощью функции make_photo_url. Возвращает список со ссылками на фото в количестве
+    :param photos_count: количество фотографий отеля.
     :param hotel_id: id отеля, для запроса.
     :return: список словарей из найденных фотографий в формате "Фотография": "ссылка на фотографию отеля".
     """
+    url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
 
-    url_photos = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
-    querystring = {'id': hotel_id}
+    querystring = {"id": hotel_id}
+
+    photo_response = request_api(url=url,  headers=headers, querystring=querystring)
+    pattern = r'(?<=,)"hotelImages":.+?(?=,"roomImages)'
+    find_photo = re.search(pattern, photo_response)
     try:
-        response = requests.request("GET", url_photos,
-                                    headers=headers,
-                                    params=querystring,
-                                    timeout=30)
-
-        if response.status_code != 200:
+        if find_photo:
+            results = json.loads(f"{{{find_photo[0]}}}")
+            url_list = make_photo_url(photos_count=photos_count, photo_data=results)
+            return url_list
+        else:
             return None
-
-        founded_url = response.json()
-        url_list = [{'photo': url[f'baseUrl']} for url in founded_url['hotelImages']]
-        return url_list
-
-    except requests.ConnectionError as e:
-        logger.info(f'{e} exceptions Connection Error. Make sure you are connected to Internet.')
-    except requests.Timeout as e:
-        logger.info(f'{e} exceptions "ConnectTimeout"')
     except requests.exceptions.RequestException as e:
         logger.info(f'{e} exceptions on step "get_photo"')
         return None

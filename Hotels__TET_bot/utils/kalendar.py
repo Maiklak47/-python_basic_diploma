@@ -1,12 +1,13 @@
 # -*- coding: utf8 -*-
 from datetime import date
 
-import telebot
+import datetime
 from loguru import logger
 from telebot import types
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 from database.chat_users_db import get_info, set_info
+from keyboards.inline.keyboard_inline import yes_or_no
 from loader import bot
 
 
@@ -50,14 +51,21 @@ def cal(call: types.CallbackQuery) -> None:
             bot.send_message(chat_id=call.message.chat.id, text=f"Вы выбрали {choice}")
             set_info(column='checkOut', value=str(choice), user_id=call.message.chat.id)
             logger.info(f'User select {call.from_user.id} as OUT date.')
-            markup = types.InlineKeyboardMarkup(row_width=3)
-            markup.add(telebot.types.InlineKeyboardButton(text='Да', callback_data='Yes'))
-            markup.add(telebot.types.InlineKeyboardButton(text='Нет', callback_data='No'))
-            bot.send_message(chat_id=call.message.chat.id, text='Загрузить фото отеля?', reply_markup=markup)
-
+            bot.send_message(chat_id=call.message.chat.id, text='Загрузить фото отеля?', reply_markup=yes_or_no())
         else:
             bot.send_message(chat_id=call.message.chat.id, text='Дата выезда не может совпадать или быть раньше '
                                                                 'даты заезда.\nВыберите дату заезда.')
             set_info(column='checkIn', value=None, user_id=call.from_user.id)
             logger.info(f'User select wrong OUT date, IN date deleted.')
             get_check_in_out_date(call.message)
+
+
+def calculate_days(in_date: str, out_date: str) -> int:
+    """Считает количество дней из дат введенных пользователем
+    """
+    pattern = '%Y-%m-%d'
+    day_1 = datetime.datetime.strptime(in_date, pattern)
+    day_2 = datetime.datetime.strptime(out_date, pattern)
+    result = day_2 - day_1
+    number_days = result.days
+    return number_days

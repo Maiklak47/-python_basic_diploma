@@ -3,7 +3,7 @@ import telebot
 from loguru import logger
 from telebot import types
 
-from api_request.command_api import hotels_info_for_bestdeal
+from api_request.hotel_id_request import hotels_info_for_bestdeal
 from api_request.photo_request import get_photo
 from database.chat_users_db import get_info
 
@@ -75,7 +75,7 @@ def result(user_id) -> None:
 
             for elem in photos[:info_from_bd[5]]:
                 if elem is not None:
-                    photos_list.append(types.InputMediaPhoto((elem['photo']).replace('{size}', 'z')))
+                    photos_list.append(types.InputMediaPhoto(elem.replace('{size}', 'z')))
             try:
                 bot.send_media_group(chat_id=user_id, media=photos_list)
             except telebot.apihelper.ApiTelegramException:

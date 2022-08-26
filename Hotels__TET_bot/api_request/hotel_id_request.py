@@ -1,11 +1,15 @@
 # -*- coding: utf8 -*-
 from datetime import datetime
 from typing import List
+import json
+import re
 
 import requests
 from loguru import logger
 
+from api_request.city_id_request import request_api
 from config_data.config import headers
+from utils.different import string_to_float
 
 
 @logger.catch
@@ -55,15 +59,10 @@ def hotels_info_for_bestdeal(town_id: str,
     if command == 'highprice':
         querystring['sortOrder'] = 'PRICE_HIGHEST_FIRST'
     try:
-        response = requests.request("GET", url_hotels,
-                                    headers=headers,
-                                    params=querystring,
-                                    timeout=30)
-
-        if response.status_code != 200:
-            return None
-
-        founded_hotels = response.json()
+        response = request_api(url=url_hotels, headers=headers, querystring=querystring)
+        pattern = r'"results".+?(?=,"pagination")'
+        find = re.search(pattern, str(response))
+        find = json.loads(f"{{{find[0]}}}")
         hotels_list = [{'id': hotel['id'],
                         'name': hotel['name'],
                         'address': hotel.get('address', {}).get('streetAddress'),
@@ -73,40 +72,19 @@ def hotels_info_for_bestdeal(town_id: str,
                         'overall_price': str(int(
                             (datetime.strptime(out_date, "%Y-%m-%d").date() -
                              datetime.strptime(in_date, "%Y-%m-%d").date()).days) *
-                                         int(hotel['ratePlan']['price']['exactCurrent'])) + ' RUB'
+                                             int(hotel['ratePlan']['price']['exactCurrent'])) + ' RUB'
                         }
-                       for hotel in founded_hotels['data']['body']['searchResults']['results']]
+                       for hotel in find['results']]
 
         for dicts in hotels_list:
             for key, value in dicts.items():
                 if value is None:
                     dicts[key] = 'Информация отсутствует'
-
         bestdeal_hotels_list = list(filter(lambda elem:
                                            max_distance >= string_to_float(elem['distance']) >= min_distance,
                                            hotels_list))
 
         return bestdeal_hotels_list[:count_of_hotels]
-    except requests.ConnectionError as e:
-        logger.info(f'{e} exceptions Connection Error. Make sure you are connected to Internet.')
-    except requests.Timeout as e:
-        logger.info(f'{e} exceptions "ConnectTimeout"')
     except requests.exceptions.RequestException as e:
         logger.info(f'{e} exceptions on step "hotels_info_for_bestdeal"')
         return None
-
-
-@logger.catch
-def string_to_float(string: str) -> float:
-    """
-    Функция. Преобразует текстовое значение числа в вещественное значение.
-    :param string: строка, содержащая текстовое значение вещественного числа.
-    :return: вещественное значение числа
-    """
-    string_elements = string.split()
-    number_elem = string_elements[0].split(',')
-    if len(number_elem) != 1:
-        float_number = float('.'.join(number_elem))
-    else:
-        float_number = float(number_elem[0])
-    return float_number

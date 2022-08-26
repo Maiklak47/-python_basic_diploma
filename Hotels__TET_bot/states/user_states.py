@@ -4,6 +4,7 @@ from telebot.handler_backends import State, StatesGroup
 
 class UserState(StatesGroup):
     """Класс состояний пользователя"""
+    user_id = State()
     command = State()
     hotels_count = State()
     price_min = State()
