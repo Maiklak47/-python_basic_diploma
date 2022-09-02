@@ -57,7 +57,7 @@ def choice_city(message: types.Message) -> None:
     if len(city_list) == 0:
         logger.info(f'City for user {message.chat.id} is not found')
         msg = bot.send_message(chat_id=chat_id, text=f'Город {city} не найден. Повторите ввод.')
-        bot.register_next_step_handler(message=msg, callback=city_choice_keyboard)
+        bot.register_next_step_handler(message=msg, callback=choice_city)
     else:
         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id + 1)
         new_markup = city_choice_keyboard(city_list)
